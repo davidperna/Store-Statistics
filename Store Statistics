@@ -1,0 +1,282 @@
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+
+public class StoreStatistics {
+
+	public static void main(String[] args) {
+		String[][] sStoreList = {	{" ", "Total"},
+									{"101","St. John's, Newfoundland"},
+									{"102","Halifax, Nova Scotia"},
+									{"103","Fredericton, New Brunswick"},
+									{"201","Quebec City, Quebec"},
+									{"202","Montreal, Quebec"},
+									{"301","Ottawa, Ontario"},
+									{"302","Toronto, Ontario"},
+									{"303","Mississauga, Ontario"},
+									{"304","Hamilton, Ontario"},
+									{"305","Kitchener, Ontario"},
+									{"401","Winnipeg, Manitoba"},
+									{"402","Regina, Saskatchewan"},
+									{"403","Calgary, Alberta"},
+									{"404","Edmonton, Alberta"},
+									{"405","Vancouver, British Columbia"},									
+									{"??", "Unknown"}						};
+
+		String[][] sProductList = {	{" ", "Total"},
+									{"PR121","Metal Pipe"},
+									{"PR122","Smooth Wall Steel Pipe"},
+									{"PR123","Corrugated Metal Pipe"},
+									{"PR124","Structural Plate Corrugated Metal Pipe"},
+									{"PR231","Tunnel Liner Plate"},
+									{"PR331","Concrete Arch Systems"},
+									{"PR441","Gates"},
+									{"PR511","Polyethylene Pipe"},
+									{"PR512","Polyvinyl Chloride Pipe"},
+									{"PR513","Reinforced Concrete Pipe (R.C.P.)"},
+									{"PR661","Beaver Control"},
+									{"PR701","End Treatments"},
+									{"PR811","Culvert Liner"},	
+									{"??", "Unknown"}			};	
+		//String variable for raw data
+		String line = null;
+		
+		//String array to split up data
+		String[] data;
+		
+		//int variable for line number
+		int 	iLinesRead = 0;
+		
+		//boolean variable for stopping at end of file
+		boolean bDone = false;
+		
+		//Variables for storing sales data
+		int		iRowStore = 0,
+				iColProduct = 0,
+				iDepthMonth = 0;
+				
+		double dSalesAmount = 0;
+		
+		//Array for all sales data
+		double[][][] dTableData = new double [17][15][14];
+		
+		//boolean variable for setting error flag
+		boolean	bError = false;
+		
+		//Integer arrays to handle errors
+		int[] 	iDateYearErrors = new int[1500],
+				iDateMonthErrors = new int[100],
+				iStoreErrors = new int[100],
+				iProductErrors = new int[100],
+				iEmptystringErrors = new int[100];
+				
+		//Integers to handle errors
+		int		iDateYearErrorsCount = 0,
+				iDateMonthErrorsCount = 0,
+				iStoreErrorsCount = 0,
+				iProductErrorsCount = 0,
+				iEmptystringErrorsCount = 0;
+		
+		//String variable for printing data
+		String sValue = "";
+			
+		File f = new File ("C:\\Users\\David\\Documents\\School\\Grade 12\\Computer Programming\\ICS4U\\StoreStatistics\\src\\Assignment05Data.txt");
+		
+		BufferedReader in = null;
+
+		// Try to open the file
+		// Handle exception if they happen
+		try{
+			in = new BufferedReader(new FileReader(f));
+		}
+		catch (FileNotFoundException e) {
+			System.out.println("The file cannot be opened! Error Number - " + e);
+		}
+
+		do	{
+				try		{		// Try to read the next line from the file
+						iLinesRead++;
+						//if (iLinesRead < 1000) System.out.println(iLinesRead);
+						line = in.readLine();
+				}
+				catch	(IOException e)	{
+							System.out.println("There is a problem at line "+ iLinesRead + " Error number - " +e);
+				}
+				if (line == null) {bDone = true;}
+				else {
+						//Check if the line is blank, and if it is, make error report and get the next line of data
+						if (line.equals("")){
+							iEmptystringErrors[iEmptystringErrorsCount] = iLinesRead;
+							iEmptystringErrorsCount++;
+							try	{
+									iLinesRead++;
+									//if (iLinesRead < 1000) System.out.println(iLinesRead);
+									line = in.readLine();
+							}
+							catch	(IOException e)	{
+									System.out.println("There is a problem at line "+ iLinesRead + " Error number - " +e);
+							}
+						}
+					//Split up the line of data (by the comma) into an array
+					data = line.split(",");
+					
+					//Convert the date data into an integer and extract the year
+					iDepthMonth = Integer.parseInt(data[1]);
+					iDepthMonth /= 10000;
+					
+					//Make error report if not a 2012 date
+					if (iDepthMonth != 2012){
+						bError = true;
+						iDateYearErrors[iDateYearErrorsCount] = iLinesRead;
+						iDateYearErrorsCount++;
+					}
+					
+					//Determine which store the sale is for
+					for(iRowStore = 0; iRowStore < 16; iRowStore ++){
+						if(data[0].equals(sStoreList[iRowStore][0]))break;
+					}
+					//Make error report if the store data does not match any store
+					if(iRowStore == 16){
+						bError = true;
+						iStoreErrors[iStoreErrorsCount] = iLinesRead;
+						iStoreErrorsCount++;
+					}
+
+					//Determine which product the sale is for
+					for(iColProduct = 0; iColProduct < 14; iColProduct ++){
+						if(data[2].equals(sProductList[iColProduct][0])) break;
+					}
+					//Make error report if the product data does not match any product
+					if(iColProduct == 14){
+						bError = true;
+						iProductErrors[iProductErrorsCount] = iLinesRead;
+						iProductErrorsCount++;
+					}
+						
+					//Determine which month the sale is for
+					iDepthMonth = Integer.parseInt(data[1]);
+					iDepthMonth = (iDepthMonth / 100) % 100;
+					//Make error report if the date data does not match any month
+					if ((iDepthMonth < 1) | (iDepthMonth > 12)){
+						bError = true;
+						iDateMonthErrors[iDateMonthErrorsCount] = iLinesRead;
+						iDateMonthErrorsCount++;
+					}
+						
+					//Convert sale price into a double
+					dSalesAmount = Double.parseDouble(data[3]);
+					
+					//Only populate data array with the sale if error is still false
+					if(!bError){
+						dTableData[0][0][0] += dSalesAmount; 								//Grand Total		
+						dTableData[iRowStore][0][0] += dSalesAmount; 						//Total for store across all products and months
+						dTableData[iRowStore][iColProduct][iDepthMonth] += dSalesAmount;	//Total for product at month at store
+						dTableData[iRowStore][iColProduct][0] += dSalesAmount;				//Total for product over all months at one store
+						dTableData[iRowStore][0][iDepthMonth] += dSalesAmount;				//Total for month over all products at one store
+					}
+					bError = false;
+				}
+		} while (!bDone);
+		
+		//Setting up formating for printing dollar amounts
+		NumberFormat nf = new DecimalFormat("##,###,###.00");
+		NumberFormat pf = new DecimalFormat("###.00");
+		
+		//Repeat for all stores
+		for(iRowStore = 1; iRowStore < 16; iRowStore ++){
+			System.out.println("                                                                                     2012   Sales   for   ABC   ROAD   SYSTEMS   LTD.");		
+			System.out.print("                                                                                      ");
+			//Calculate and print enough spaces to center the store name
+			sValue = "Store " + sStoreList[iRowStore][0] + ": " + sStoreList[iRowStore][1];
+			for(int iLoop = 1; iLoop < ( (48 - sValue.length()) / 2); iLoop++){
+				System.out.print(" ");
+			}
+			System.out.println(sValue);
+			System.out.println("Product                                         JANUARY     February        MARCH        APRIL          MAY         JUNE         JULY       AUGUST     SEPTEMBER     OCTOBER     NOVEMBER     DECEMBER      YEAR TOTAL          %");
+			System.out.println("--------------------------------------        ----------   ----------   ----------   ----------   ----------   ----------   ----------   ----------   ----------   ----------   ----------   ----------   ------------     ------");
+			
+			for (iColProduct = 1; iColProduct < 14; iColProduct++){
+				// Print full product name
+				sValue = sProductList[iColProduct][1];
+				while(sValue.length()< 43) {sValue +=" ";}
+				System.out.print(sValue);
+			
+				// Loop through the columns and print the monthly totals
+				for (iDepthMonth = 1; iDepthMonth < 13; iDepthMonth++) {
+					sValue = nf.format(dTableData [iRowStore][iColProduct][iDepthMonth]);
+					while (sValue.length() < 13) {sValue = " " + sValue;}
+					System.out.print(sValue);
+					}
+				// Print total for the product (row)
+				sValue = pf.format(dTableData [iRowStore][iColProduct][0]);
+				while (sValue.length() < 15) {sValue = " " + sValue;}
+				System.out.print(sValue + "  ");
+			
+				//Print percentage for the product (row)
+				sValue = pf.format(100.0 * dTableData[iRowStore][iColProduct][0] / dTableData [iRowStore][0][0]);
+				while (sValue.length() < 8) {sValue = " " + sValue;}
+				System.out.println(sValue + "%");
+			}
+			
+			System.out.println("======================================        ==========   ==========   ==========   ==========   ==========   ==========   ==========   ==========   ==========   ==========   ==========   ==========   ============    =======");
+			System.out.print("TOTAL                                      ");
+			
+			//Print the monthly totals
+			for(iDepthMonth = 1; iDepthMonth < 13; iDepthMonth ++){
+				sValue = nf.format(dTableData[iRowStore][0][iDepthMonth]);
+				while (sValue.length() < 13) {sValue = " " + sValue;}
+				System.out.print(sValue);
+			}
+			
+			//Print the yearly totals for all products
+			sValue = nf.format(dTableData[iRowStore][0][0]);
+			while (sValue.length() < 15) {sValue = " " + sValue;}
+			System.out.print(sValue);
+			
+			//Calculate and print the total percent for all products
+			double dStoreTotal = 0;
+			for (iColProduct = 1; iColProduct < 15; iColProduct++){
+				dStoreTotal += dTableData[iRowStore][iColProduct][0];
+			}
+			sValue = nf.format(100 * dStoreTotal / dTableData[iRowStore][0][0]);
+			while (sValue.length() < 10) {sValue = " " + sValue;}
+			System.out.println(sValue + "%");
+			System.out.println('\n');
+		}
+		
+		//Print the empty string error line numbers
+		System.out.println("There was an empty string at the following line numbers:");
+		for(int iLoop = 0; iLoop < iEmptystringErrorsCount; iLoop++){
+			if((iLoop + 1) % 30 == 0) System.out.println(iEmptystringErrors[iLoop] + ", ");
+			else{System.out.print(iEmptystringErrors[iLoop] + ", ");}	
+		}
+		//Print the date(year) error line numbers
+		System.out.println("\n\nThere was an error in the date(incorrect year) at the following line numbers:");
+		for(int iLoop1 = 0; iLoop1 < iDateYearErrorsCount; iLoop1++){
+			if((iLoop1 + 1) % 24 == 0) System.out.println(iDateYearErrors[iLoop1] + ", ");
+			else{System.out.print(iDateYearErrors[iLoop1] + ", ");}
+		}	
+		//Print the date(month) error line numbers
+		System.out.println("\n\nThere was an error in the date(incorrect month) at the following line numbers:");
+		for(int iLoop2 = 0; iLoop2 < iDateMonthErrorsCount; iLoop2++){
+			if((iLoop2 + 1) % 30 == 0) System.out.println(iDateMonthErrors[iLoop2] + ", ");
+			else{System.out.print(iDateMonthErrors[iLoop2] + ", ");}	
+		}
+		//Print the store number error line numbers
+		System.out.println("\n\nThere was an error in the store number at the following line numbers:");
+		for(int iLoop3 = 0; iLoop3 < iStoreErrorsCount; iLoop3++){
+			if((iLoop3 + 1) % 30 == 0) System.out.println(iStoreErrors[iLoop3] + ", ");
+			else{System.out.print(iStoreErrors[iLoop3] + ", ");}	
+		}
+		//Print the product number error line numbers
+		System.out.println("\n\nThere was an error in the product number at the following line numbers:");
+		for(int iLoop4 = 0; iLoop4 < iProductErrorsCount; iLoop4++){
+			if((iLoop4 + 1) % 30 == 0) System.out.println(iProductErrors[iLoop4] + ", ");
+			else{System.out.print(iProductErrors[iLoop4] + ", ");}	
+		}
+	}
+}
